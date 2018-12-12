@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using StackExchange.Redis;
+using Newtonsoft.Json;
 
 namespace PaJaMa.RedisClient
 {
@@ -37,30 +38,36 @@ namespace PaJaMa.RedisClient
 					PaJaMa.Common.SettingsHelper.SaveUserSettings<List<string>>(connStrings);
 				}
 				var db = conn.GetDatabase();
+				string output = string.Empty;
 				switch (cboCommand.Text)
 				{
 					case "GET":
-						txtOutput.Text = db.StringGet(txtHash.Text);
+						output = db.StringGet(txtHash.Text);
 						break;
 					case "HGET":
-						txtOutput.Text = db.HashGet(txtHash.Text, txtField.Text);
+						output = db.HashGet(txtHash.Text, txtField.Text);
 						break;
 					case "FLUSHALL":
 						var endpoint = conn.GetEndPoints()[0];
 						var server = conn.GetServer(endpoint);
 						server.FlushDatabase();
+						output = "OK";
 						break;
+				}
+				try
+				{
+					var obj = JsonConvert.DeserializeObject(output);
+					txtOutput.Text = JsonConvert.SerializeObject(obj, Formatting.Indented);
+				}
+				catch
+				{
+					txtOutput.Text = output;
 				}
 			}
 			catch (Exception ex)
 			{
 				MessageBox.Show(ex.Message);
 			}
-		}
-
-		public void Disconnect()
-		{
-			_connection.Close();
 		}
 	}
 }
